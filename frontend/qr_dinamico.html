@@ -28,15 +28,15 @@ body {
     margin-bottom: 12px;
 }
 
-canvas {
-    background: white;
-    padding: 15px;
-    border-radius: 15px;
-}
-
 #time {
     color: #38bdf8;
     font-weight: bold;
+}
+
+img {
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
 }
 </style>
 </head>
@@ -46,15 +46,13 @@ canvas {
 <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card" style="width: 320px;">
         <div id="usuario"></div>
-        <canvas id="qr" width="220" height="220"></canvas>
+
+        <!-- ✅ QR COMO IMAGEN -->
+        <img id="qrImage" width="220" height="220" />
+
         <p class="mt-3">⏱️ <span id="time">30</span> s</p>
     </div>
 </div>
-
-<!-- ✅ CDN PRINCIPAL -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.4/qrcode.min.js"></script>
-<!-- ✅ FALLBACK SI CDN FALLA -->
-<script src="https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js"></script>
 
 <script>
 const params = new URLSearchParams(window.location.search);
@@ -63,23 +61,18 @@ const nombre = params.get("nombre");
 
 document.getElementById("usuario").innerText = "ID: " + nombre;
 
-const canvas = document.getElementById("qr");
+const qrImg = document.getElementById("qrImage");
 const timeEl = document.getElementById("time");
 
 let tiempo = 30;
 
 function generarQR() {
-    if (!window.QRCode) {
-        console.error("QRCode no cargó desde ningún CDN");
-        return;
-    }
-
     const ts = Math.floor(Date.now() / 1000);
     const contenido = `${qrBase}|${ts}|TEST`;
 
-    QRCode.toCanvas(canvas, contenido, { width: 220 }, function (err) {
-        if (err) console.error("Error QR:", err);
-    });
+    // ✅ API DE QR (SIN LIBRERÍAS)
+    qrImg.src =
+        `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(contenido)}`;
 
     tiempo = 30;
     timeEl.innerText = tiempo;
@@ -94,9 +87,10 @@ setInterval(() => {
     }
 }, 1000);
 
-// ✅ PRIMER QR
-setTimeout(generarQR, 200);
+// ✅ Primer QR
+generarQR();
 </script>
 
 </body>
 </html>
+
