@@ -1,12 +1,19 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
-from pathlib import Path
+import json
+import os
 
-# Obtener la ruta absoluta de la carpeta backend
-BASE_DIR = Path(__file__).resolve().parent
-KEY_PATH = BASE_DIR / "firebase_key.json"
+# ✅ Inicializar Firebase correctamente en Render
+if not firebase_admin._apps:
 
-cred = credentials.Certificate(str(KEY_PATH))
-firebase_admin.initialize_app(cred)
+    if "FIREBASE_CREDENTIALS" in os.environ:
+        # Render / Producción
+        cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # Local
+        cred = credentials.Certificate("serviceAccountKey.json")
+
+    firebase_admin.initialize_app(cred)
 
 db = firestore.client()
