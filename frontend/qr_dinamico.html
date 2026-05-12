@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QR Dinámico</title>
 
-<!-- ✅ Bootstrap bien cargado -->
+<!-- ✅ Bootstrap correcto -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 
 <style>
@@ -22,13 +22,14 @@ body {
     text-align: center;
 }
 
-/* ✅ ID BIEN VISIBLE */
+/* ✅ ID bien visible */
 #usuario {
     color: #e5e7eb;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
+/* ✅ QR */
 canvas {
     background: white;
     padding: 15px;
@@ -52,7 +53,7 @@ canvas {
     </div>
 </div>
 
-<!-- ✅ ✅ ✅ ESTA LÍNEA ES OBLIGATORIA -->
+<!-- ✅ ✅ ✅ LIBRERÍA QR (ESTO ERA LO QUE FALTABA BIEN PUESTO) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.4/qrcode.min.js"></script>
 
 <script>
@@ -65,25 +66,41 @@ document.getElementById("usuario").innerText = "ID: " + nombre;
 const canvas = document.getElementById("qr");
 const timeEl = document.getElementById("time");
 
-let t = 30;
+let tiempo = 30;
+let intervalo = null;
 
 function generarQR() {
-    const ts = Math.floor(Date.now() / 1000);
-    const contenido = `${qrBase}|${ts}|TEST`;
 
-    // ✅ AQUÍ SE DIBUJA EL QR
-    QRCode.toCanvas(canvas, contenido, { width: 220 });
+    // ✅ Seguridad: verificar que la librería existe
+    if (typeof QRCode === "undefined") {
+        console.error("QRCode no está cargado");
+        return;
+    }
 
-    t = 30;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const contenido = `${qrBase}|${timestamp}|TEST`;
+
+    QRCode.toCanvas(canvas, contenido, { width: 220 }, function (error) {
+        if (error) {
+            console.error("Error generando QR:", error);
+        }
+    });
+
+    tiempo = 30;
+    timeEl.innerText = tiempo;
 }
 
-setInterval(() => {
-    t--;
-    timeEl.innerText = t;
-    if (t <= 0) generarQR();
+// ✅ Contador correcto (no se va a negativo)
+intervalo = setInterval(() => {
+    tiempo--;
+    if (tiempo <= 0) {
+        generarQR();
+    } else {
+        timeEl.innerText = tiempo;
+    }
 }, 1000);
 
-// ✅ Generar el primero
+// ✅ Generar el primer QR
 generarQR();
 </script>
 
