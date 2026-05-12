@@ -3,34 +3,45 @@ from backend.database import db
 from datetime import datetime
 import time
 
-app = FastAPI()
+# ✅ SERVIR ARCHIVOS HTML
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 
+app = FastAPI(title="Sistema de Control de Acceso")
+
+# ✅ RUTA BASE
+BASE_DIR = Path(__file__).resolve().parent
+
+# ✅ SERVIR ARCHIVOS ESTÁTICOS
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "../frontend")), name="static")
+
+# ✅ PÁGINA PRINCIPAL (ARREGLA EL 404)
+@app.get("/")
+def index():
+    return FileResponse(str(BASE_DIR / "../frontend/acceso.html"))
+
+
+# ✅ TIEMPO DEL QR
 QR_TIEMPO_MAX = 30
 
 
-# ✅ BUSCAR USUARIO POR CÉDULA (VERSIÓN SEGURA)
+# ✅ BUSCAR USUARIO POR CÉDULA
 @app.get("/buscar_usuario")
 def buscar_usuario(nombre: str):
-
-    print("Buscando cédula:", nombre)  # DEBUG
 
     personas_ref = db.collection("personas")
 
     for doc in personas_ref.stream():
         datos = doc.to_dict()
 
-        print("Comparando con:", datos.get("cedula"))  # DEBUG
-
         if str(datos.get("cedula")) == str(nombre):
-            print("✅ ENCONTRADO")
-
             return {
                 "encontrado": True,
                 "qr_id": datos.get("qr_id"),
                 "nombre": datos.get("nombres", "")
             }
 
-    print("❌ NO ENCONTRADO")
     return {"encontrado": False}
 
 
@@ -63,32 +74,52 @@ def controlar_acceso(data: dict):
     qr_completo = data.get("qr_id")
 
     if not qr_completo:
-        return {"permitido": False}
+        return {"permitido": False, "mensaje": "QR no enviado"}
 
-    valido, qr_id, _ = validar_qr_dinamico(qr_completo)
+    valido, qr_id, error = validar_qr_dinamico(qr_completo)
 
     if not valido:
-        return {"permitido": False}
+        return {"permitido": False, "mensaje": error}
 
     qr_id = qr_id.strip().upper()
 
     personas_ref = db.collection("personas")
 
+    persona = None
+
     for doc in personas_ref.stream():
         datos = doc.to_dict()
 
-        if str(datos.get("qr_id")).strip().upper() == qr_id:
+        if str(datos.get("qr_id", "")).strip().upper() == qr_id:
+            persona = doc
+            break
 
-            if not datos.get("dentro"):
+    if not persona:
+        return {"permitido": False, "mensaje": "Persona no registrada"}
 
-                personas_ref.document(doc.id).update({"dentro": True})
+    datos = persona.to_dict()
 
-                return {"permitido": True, "accion": "entrada"}
+    # ✅ ENTRADA / SALIDA
+    if not datos.get("dentro"):
 
-            else:
+        personas_ref.document(persona.id).update({
+            "dentro": True
+        })
 
-                personas_ref.document(doc.id).update({"dentro": False})
+        return {
+            "permitido": True,
+            "accion": "entrada",
+            "mensaje": "Entrada permitida"
+        }
 
-                return {"permitido": True, "accion": "salida"}
+    else:
 
-    return {"permitido": False}
+        personas_ref.document(persona.id).update({
+            "dentro": False
+        })
+
+        return {
+            "permitido": True,
+            "accion": "salida",
+            "mensaje": "Salida registrada"
+        }
