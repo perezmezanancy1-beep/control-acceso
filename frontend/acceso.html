@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingreso UAC</title>
+
+<!-- ✅ Bootstrap correcto -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+.card {
+    border-radius: 20px;
+    background: #1e293b;
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
+    padding: 30px;
+}
+
+.logo {
+    width: 70px;
+    margin-bottom: 10px;
+}
+
+.titulo {
+    color: #38bdf8;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.subtitulo {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* ICONO */
+.input-group-text {
+    background: #0f172a;
+    color: white;
+    border: none;
+    font-size: 18px;
+}
+
+.form-control {
+    border: none;
+    text-align: center;
+}
+
+/* BOTON */
+.btn-custom {
+    border-radius: 10px;
+    font-weight: bold;
+    background: #2563eb;
+    border: none;
+}
+
+.btn-custom:hover {
+    background: #1d4ed8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container d-flex justify-content-center align-items-center vh-100">
+
+    <div class="card text-center" style="width: 320px;">
+
+        <!-- ✅ LOGO -->
+        <img src="logo.png" class="logo">
+
+        <h3 class="titulo">Control de Acceso</h3>
+        <p class="subtitulo">Universidad Autónoma del Caribe</p>
+
+        <!-- ✅ INPUT CORREGIDO -->
+        <div class="input-group mt-2">
+            <span class="input-group-text">ID</span>
+            <input id="cedula" class="form-control" placeholder="Ingresa tu cédula">
+        </div>
+
+        <!-- ✅ BOTON -->
+        <button class="btn btn-custom mt-3 w-100" onclick="buscar()">
+            Ingresar
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+async function buscar(){
+
+    const cedula = document.getElementById("cedula").value;
+
+    if(!cedula){
+        alert("Ingresa tu cédula");
+        return;
+    }
+
+    const res = await fetch(
+        `https://reenact-styling-subatomic.ngrok-free.dev/buscar_usuario?nombre=${cedula}`
+    );
+
+    const data = await res.json();
+
+    if(!data.encontrado){
+        alert("Usuario no encontrado");
+        return;
+    }
+
+    window.location.href =
+        `qr_dinamico.html?qr=${data.qr_id}&nombre=${cedula}`;
+}
+
+</script>
+
+</body>
+</html>
