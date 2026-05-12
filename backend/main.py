@@ -9,23 +9,38 @@ from pathlib import Path
 
 app = FastAPI(title="Sistema de Control de Acceso")
 
+# -------------------------------
+# CONFIGURACIÓN FRONTEND
+# -------------------------------
 BASE_DIR = Path(__file__).resolve().parent
 
-# ✅ Servir frontend
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "../frontend")), name="static")
+# Servir archivos estáticos (css, js, imágenes)
+app.mount(
+    "/static",
+    StaticFiles(directory=str(BASE_DIR / "../frontend")),
+    name="static"
+)
 
+# Página principal
 @app.get("/")
 def index():
     return FileResponse(str(BASE_DIR / "../frontend/acceso.html"))
 
-# ✅ Tiempo QR
-QR_TIEMPO_MAX = 30
+
+# -------------------------------
+# CONFIGURACIÓN QR
+# -------------------------------
+QR_TIEMPO_MAX = 30  # segundos
 
 
-# ✅ BUSCAR USUARIO (ESTA RUTA YA NO LA PISA NADIE)
+# -------------------------------
+# BUSCAR USUARIO POR CÉDULA
+# (ID del documento en Firestore)
+# -------------------------------
 @app.get("/buscar_usuario")
 def buscar_usuario(nombre: str):
 
+    # Buscar directamente por ID del documento
     doc = db.collection("personas").document(nombre).get()
 
     if doc.exists:
@@ -39,44 +54,75 @@ def buscar_usuario(nombre: str):
     return {"encontrado": False}
 
 
-# ✅ VALIDAR QR
+# -------------------------------
+# VALIDAR QR DINÁMICO
+# -------------------------------
 def validar_qr_dinamico(qr_completo: str):
     try:
         partes = qr_completo.split("|")
+
+        if len(partes) < 2:
+            return False, None
+
         qr_base = partes[0].strip().upper()
         timestamp = int(partes[1])
 
+        # VALIDACIÓN DE TIEMPO (CORREGIDA)
         if int(time.time()) - timestamp > QR_TIEMPO_MAX:
             return False, None
 
         return True, qr_base
-    except:
+
+    except Exception:
         return False, None
 
 
-# ✅ CONTROL DE ACCESO
+# -------------------------------
+# CONTROL DE ACCESO
+# -------------------------------
 @app.post("/acceso")
-def acceso(data: dict):
+def controlar_acceso(data: dict):
 
     qr = data.get("qr_id")
+
+    if not qr:
+        return {"permitido": False, "mensaje": "QR no enviado"}
+
     valido, qr_id = validar_qr_dinamico(qr)
 
     if not valido:
-        return {"permitido": False}
+        return {"permitido": False, "mensaje": "QR inválido o expirado"}
 
     personas_ref = db.collection("personas")
 
+    # Buscar persona por qr_id
     for doc in personas_ref.stream():
         datos = doc.to_dict()
 
-        if datos.get("qr_id") == qr_id:
+        if str(datos.get("qr_id", "")).strip().upper() == qr_id:
 
             if not datos.get("dentro"):
-                personas_ref.document(doc.id).update({"dentro": True})
-                return {"permitido": True, "accion": "entrada"}
+                # ENTRADA
+                personas_ref.document(doc.id).update({
+                    "dentro": True
+                })
+
+                return {
+                    "permitido": True,
+                    "accion": "entrada",
+                    "mensaje": "Entrada permitida"
+                }
 
             else:
-                personas_ref.document(doc.id).update({"dentro": False})
-                return {"permitido": True, "accion": "salida"}
+                # SALIDA
+                personas_ref.document(doc.id).update({
+                    "dentro": False
+                })
 
-    return {"permitido": False}
+                return {
+                    "permitido": True,
+                    "accion": "salida",
+                    "mensaje": "Salida registrada"
+                }
+
+    return {"permitido": False, "mensaje": "Persona no registrada"}
