@@ -9,30 +9,20 @@ from pathlib import Path
 
 app = FastAPI(title="Sistema de Control de Acceso")
 
-# ✅ RUTA BASE
 BASE_DIR = Path(__file__).resolve().parent
 
-# ✅ SERVIR ARCHIVOS ESTÁTICOS
+# ✅ Servir frontend
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "../frontend")), name="static")
 
-# ✅ ABRIR PÁGINA PRINCIPAL
 @app.get("/")
 def index():
     return FileResponse(str(BASE_DIR / "../frontend/acceso.html"))
 
-# ✅ PERMITIR CARGAR OTROS HTML (como qr_dinamico.html)
-@app.get("/{file_name}")
-def serve_file(file_name: str):
-    file_path = BASE_DIR / "../frontend" / file_name
-    if file_path.exists():
-        return FileResponse(str(file_path))
-    return {"error": "Archivo no encontrado"}
-
-# ✅ TIEMPO DEL QR
+# ✅ Tiempo QR
 QR_TIEMPO_MAX = 30
 
 
-# ✅ BUSCAR USUARIO POR CÉDULA (USANDO ID DEL DOCUMENTO 🔥)
+# ✅ BUSCAR USUARIO (ESTA RUTA YA NO LA PISA NADIE)
 @app.get("/buscar_usuario")
 def buscar_usuario(nombre: str):
 
@@ -40,7 +30,6 @@ def buscar_usuario(nombre: str):
 
     if doc.exists:
         datos = doc.to_dict()
-
         return {
             "encontrado": True,
             "qr_id": datos.get("qr_id"),
@@ -50,14 +39,10 @@ def buscar_usuario(nombre: str):
     return {"encontrado": False}
 
 
-# ✅ VALIDAR QR DINÁMICO
+# ✅ VALIDAR QR
 def validar_qr_dinamico(qr_completo: str):
     try:
         partes = qr_completo.split("|")
-
-        if len(partes) < 2:
-            return False, None
-
         qr_base = partes[0].strip().upper()
         timestamp = int(partes[1])
 
@@ -65,7 +50,6 @@ def validar_qr_dinamico(qr_completo: str):
             return False, None
 
         return True, qr_base
-
     except:
         return False, None
 
@@ -75,7 +59,6 @@ def validar_qr_dinamico(qr_completo: str):
 def acceso(data: dict):
 
     qr = data.get("qr_id")
-
     valido, qr_id = validar_qr_dinamico(qr)
 
     if not valido:
@@ -86,30 +69,14 @@ def acceso(data: dict):
     for doc in personas_ref.stream():
         datos = doc.to_dict()
 
-        if str(datos.get("qr_id")).strip().upper() == qr_id:
+        if datos.get("qr_id") == qr_id:
 
             if not datos.get("dentro"):
-
-                personas_ref.document(doc.id).update({
-                    "dentro": True
-                })
-
-                return {
-                    "permitido": True,
-                    "accion": "entrada",
-                    "mensaje": "Entrada permitida"
-                }
+                personas_ref.document(doc.id).update({"dentro": True})
+                return {"permitido": True, "accion": "entrada"}
 
             else:
-
-                personas_ref.document(doc.id).update({
-                    "dentro": False
-                })
-
-                return {
-                    "permitido": True,
-                    "accion": "salida",
-                    "mensaje": "Salida registrada"
-                }
+                personas_ref.document(doc.id).update({"dentro": False})
+                return {"permitido": True, "accion": "salida"}
 
     return {"permitido": False}
