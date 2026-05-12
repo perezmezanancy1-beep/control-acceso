@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Acceso</title>
+<title>Acceso UAC</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -11,22 +11,45 @@
 body {
     background: linear-gradient(135deg, #0f172a, #1e293b);
     color: white;
+    font-family: Arial, sans-serif;
 }
 
 .card {
-    border-radius: 20px;
     background: #1e293b;
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
 }
 
 canvas {
     background: white;
-    padding: 20px;
+    padding: 15px;
     border-radius: 15px;
 }
 
-.nombre {
-    font-size: 18px;
+/* ✅ PANTALLA PRO */
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 26px;
     font-weight: bold;
+    z-index: 999;
+}
+
+.ok {
+    background: #16a34a;
+}
+
+.out {
+    background: #2563eb;
+}
+
+.error {
+    background: #dc2626;
 }
 </style>
 </head>
@@ -34,57 +57,70 @@ canvas {
 <body>
 
 <div class="container d-flex justify-content-center align-items-center vh-100">
-
-    <div class="card p-4 text-center" style="width: 320px;">
-
-        <div class="nombre mb-2" id="nombreUsuario"></div>
-
-        <canvas id="qrCanvas"></canvas>
-
-        <p class="mt-3">
-            ⏱️ <span id="tiempo">30</span> segundos
-        </p>
-
+    <div class="card" style="width: 320px;">
+        <h4 id="usuario"></h4>
+        <canvas id="qr"></canvas>
+        <p class="mt-3">⏱️ Válido por <span id="time">30</span> s</p>
     </div>
-
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+<!-- ✅ OVERLAY PRO -->
+<div id="overlay" class="overlay">
+    <div id="msg"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.4/qrcode.min.js"></script>
 
 <script>
-let tiempoRestante = 30;
+const params = new URLSearchParams(window.location.search);
+const qrBase = params.get("qr");
+const nombre = params.get("nombre");
+const status = params.get("status"); // entrada | salida | error
 
-const qrCanvas = document.getElementById("qrCanvas");
-const tiempoTexto = document.getElementById("tiempo");
+document.getElementById("usuario").innerText = "ID: " + nombre;
 
-const urlParams = new URLSearchParams(window.location.search);
+const canvas = document.getElementById("qr");
+const timeEl = document.getElementById("time");
 
-const qrBase = urlParams.get("qr");
-const nombre = urlParams.get("nombre");
+let t = 30;
 
-document.getElementById("nombreUsuario").innerText = "Cédula: " + nombre;
-
-function generarQR(){
-
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    const qrCompleto = `${qrBase}|${timestamp}|TEST`;
-
-    QRCode.toCanvas(qrCanvas, qrCompleto, { width: 250 });
-
-    tiempoRestante = 30;
+function generarQR() {
+    const ts = Math.floor(Date.now() / 1000);
+    const contenido = `${qrBase}|${ts}|TEST`;
+    QRCode.toCanvas(canvas, contenido, { width: 220 });
+    t = 30;
 }
 
 setInterval(() => {
-    tiempoRestante--;
-    tiempoTexto.innerText = tiempoRestante;
-
-    if(tiempoRestante <= 0){
-        generarQR();
-    }
-},1000);
+    t--;
+    timeEl.innerText = t;
+    if (t <= 0) generarQR();
+}, 1000);
 
 generarQR();
+
+/* ✅ MOSTRAR PANTALLA PRO */
+if (status) {
+    const overlay = document.getElementById("overlay");
+    const msg = document.getElementById("msg");
+
+    overlay.style.display = "flex";
+
+    if (status === "entrada") {
+        overlay.classList.add("ok");
+        msg.innerText = "✅ ACCESO PERMITIDO";
+    }
+    else if (status === "salida") {
+        overlay.classList.add("out");
+        msg.innerText = "🔵 SALIDA REGISTRADA";
+    }
+    else {
+        overlay.classList.add("error");
+        msg.innerText = "❌ ACCESO DENEGADO";
+    }
+
+    setTimeout(() => overlay.style.display = "none", 3000);
+}
 </script>
 
 </body>
