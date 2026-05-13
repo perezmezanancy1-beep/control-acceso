@@ -6,67 +6,41 @@
 <title>Registro Administrativo</title>
 
 <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.minadial-gradient(1200px 600px at 50% -10%, #1f2a44 0%, #0b1220 60%);
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.minb1220;
   font-family: Arial, sans-serif;
-  color: #e5e7eb;
+  color:#e5e7eb;
 }
-
 .card{
-  max-width: 420px;
-  margin: 40px auto;
-  background: #0f172a;
-  border-radius: 24px;
-  padding: 28px 24px;
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
+  max-width:420px;
+  margin:40px auto;
+  background:#0f172a;
+  border-radius:24px;
+  padding:24px;
 }
-
 .logo{
-  width: 90px;
-  display: block;
-  margin: 0 auto 10px;
+  width:90px;
+  display:block;
+  margin:0 auto 10px;
 }
-
-.titulo{
-  text-align: center;
-  font-weight: 900;
-  font-size: 22px;
-  color: #38bdf8;
-}
-
-.subtitulo{
-  text-align: center;
-  font-size: 14px;
-  color: #cbd5f5;
-  margin-bottom: 18px;
-}
-
 label{
-  font-weight: 600;
-  color: #f8fafc;
+  color:white;
+  font-weight:600;
 }
-
 .form-control{
-  background: #020617;
-  border: none;
-  color: white;
-  border-radius: 10px;
+  background:#020617;
+  border:none;
+  color:white;
 }
-
 .btn-custom{
-  background: #2563eb;
-  border: none;
-  border-radius: 14px;
-  padding: 10px;
-  font-weight: bold;
+  background:#2563eb;
+  border:none;
+  border-radius:14px;
+  font-weight:bold;
 }
-
 .alert-success{
-  background: #16a34a;
-  border: none;
-  color: white;
-  border-radius: 14px;
-  font-weight: bold;
-  text-align: center;
+  background:#16a34a;
+  color:white;
+  border:none;
 }
 </style>
 </head>
@@ -75,90 +49,80 @@ label{
 
 <div class="card">
 
-  <img src="/static/logo.png" class="logo" alt="Logodministrativo</div>
-  <div class="subtitulo">Universidad Autónoma del Caribe</div>
+<img src="/static/logo.png" class-center text-info">Registro Administrativo</h4>
+<p class="text-center">Universidad Autónoma del Caribe</p>
 
-  <div id="successMsg" class="alert alert-success d-none">
-    ✅ Registro exitoso
-  </div>
+<div id="successMsg" class="alert alert-success d-none">
+✅ Registro exitoso
+</div>
 
-  <form id="formPersona">
+<form id="formPersona">
 
-    <div class="mb-2">
-      <label>Cédula</label>
-      <input class="form-control" id="cedula" required>
-    </div>
+<label>Cédula</label>
+<input class="form-control mb-2" id="cedula" required>
 
-    <div class="mb-2">
-      <label>Nombres</label>
-      <input class="form-control" id="nombres" required>
-    </div>
+<label>Nombres</label>
+<input class="form-control mb-2" id="nombres" required>
 
-    <div class="mb-2">
-      <label>Apellidos</label>
-      <input class="form-control" id="apellidos" required>
-    </div>
+<label>Apellidos</label>
+<input class="form-control mb-2" id="apellidos" required>
 
-    <div class="mb-2">
-      <label>Carrera</label>
-      <input class="form-control" id="carrera" required>
-    </div>
+<label>Carrera</label>
+<input class="form-control mb-2" id="carrera" required>
 
-    <div class="mb-3">
-      <label>Facultad</label>
-      <input class="form-control" id="facultad" required>
-    </div>
+<label>Facultad</label>
+<input class="form-control mb-3" id="facultad" required>
 
-    <button type="submit" class="btn btn-custom w-100">
-      Registrar
-    </button>
+<button type="submit" class="btn btn-custom w-100">
+Registrar
+</button>
 
-  </form>
+</form>
 
-  <button id="volverBtn"
-          class="btn btn-secondary w-100 mt-3 d-none"
-          onclick="window.location"submit", async function(e){
-  e.preventDefault();
+<button id="volverBtn"
+class="btn btn-secondary w-100 mt-3 d-none"
+onclick="window.location.href='/'ener("submit", async (e) => {
+e.preventDefault();
 
-  const data = {
-    cedula: document.getElementById("cedula").value,
-    nombres: document.getElementById("nombres").value,
-    apellidos: document.getElementById("apellidos").value,
-    carrera: document.getElementById("carrera").value,
-    facultad: document.getElementById("facultad").value,
-    grupo: document.getElementById("facultad").value,
-    huella_id: 0,
-    dentro: false,
-    activo: true
-  };
+const data = {
+cedula: cedula.value,
+nombres: nombres.value,
+apellidos: apellidos.value,
+carrera: carrera.value,
+facultad: facultad.value,
+grupo: facultad.value,
+huella_id: 0,
+dentro: false,
+activo: true
+};
 
-  try{
-    const response = await fetch("/personas",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(data)
-    });
+try {
+const res = await fetch("/personas", {
+method: "POST",
+headers: {"Content-Type": "application/json"},
+body: JSON.stringify(data)
+});
 
-    const result = await response.json();
+const result = await res.json();
 
-    if(!response.ok){
-      alert("Error al registrar");
-      return;
-    }
+if (!res.ok) {
+alert("Error al registrar");
+return;
+}
 
-    document.getElementById("successMsg").classList.remove("d-none");
-    document.getElementById("formPersona").reset();
-    document.getElementById("volverBtn").classList.remove("d-none");
+successMsg.classList.remove("d-none");
+formPersona.reset();
+volverBtn.classList.remove("d-none");
 
-    setTimeout(()=>{
-      window.location.href =
-        `/static/qr_dinamico.html?qr=${result.qr_id}&nombre=${result.cedula}&v=${Date.now()}`;
-    },1500);
+setTimeout(() => {
+window.location.href =
+`/static/qr_dinamico.html?qr=${result.qr_id}&nombre=${result.cedula}`;
+}, 1200);
 
-  }catch(error){
-    alert("Error de conexión con el backend");
-    console.error(error);
-  }
+} catch (err) {
+alert("Error de conexión");
+console.error(err);
+}
 });
 </script>
 
