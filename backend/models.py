@@ -7,9 +7,10 @@ class Persona(BaseModel):
     nombres: str
     apellidos: str
     carrera: str
+    facultad: str
+    grupo: str
     huella_id: Optional[int] = None
     qr_id: Optional[str] = None
-    grupo: str
     dentro: bool = False
     activo: bool = True
     fecha_registro: datetime = datetime.utcnow()
