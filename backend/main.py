@@ -18,7 +18,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "../frontend")), name=
 def index():
     return FileResponse(str(BASE_DIR / "../frontend/acceso.html"))
 
-# ✅ Buscar usuario por cédula (página pública)
+# ✅ Página pública: buscar usuario por cédula
 @app.get("/buscar_usuario")
 def buscar_usuario(nombre: str):
     doc = db.collection("personas").document(nombre).get()
@@ -31,20 +31,21 @@ def buscar_usuario(nombre: str):
         }
     return {"encontrado": False}
 
-# ✅ Registro administrativo (GUARDA EN FIREBASE Y DEVUELVE QR)
+# ✅ Registro administrativo
 @app.post("/personas")
 def crear_persona(persona: Persona):
+
     qr_id = f"QR-{uuid.uuid4().hex[:8].upper()}"
 
     data = persona.dict()
     data["qr_id"] = qr_id
     data["dentro"] = False
 
-    # Usar la cédula como ID del documento
+    # Usar cédula como ID del documento
     db.collection("personas").document(persona.cedula).set(data)
 
     return {
-        "mensaje": "Persona registrada",
+        "mensaje": "Persona registrada correctamente",
         "qr_id": qr_id,
         "cedula": persona.cedula
     }
