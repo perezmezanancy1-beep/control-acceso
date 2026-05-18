@@ -71,7 +71,7 @@ def validar_acceso(data: dict):
         }
 
     # Extraer el código (por si viene con |timestamp)
-    qr_id = qr_data.split("|")[0]
+    qr_id = qr_data[:11]
 
     # Buscar en Firebase
     personas = db.collection("personas").where("qr_id", "==", qr_id).stream()
