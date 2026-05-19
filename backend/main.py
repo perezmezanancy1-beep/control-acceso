@@ -72,7 +72,7 @@ def validar_acceso(data: dict):
 
     # Extraer el código (por si viene con |timestamp)
     qr_id = qr_data[:11]
-    if not qr_id.startswith("QR_"):
+    if not qr_id.startswith("QR-"):
         return {"permitido":False, "mensaje": "QR inválido"}
 
     # Buscar en Firebase
