@@ -7,8 +7,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 
-from datetime import datetime
-
 app = FastAPI(title="Sistema de Control de Acceso")
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -17,13 +15,13 @@ BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "../frontend")), name="static")
 
 
-#  Página principal
+# Página principal
 @app.get("/")
 def index():
     return FileResponse(str(BASE_DIR / "../frontend/acceso.html"))
 
 
-#  Buscar usuario por cédula
+#  Buscar usuario
 @app.get("/buscar_usuario")
 def buscar_usuario(nombre: str):
     doc = db.collection("personas").document(nombre).get()
@@ -39,7 +37,7 @@ def buscar_usuario(nombre: str):
     return {"encontrado": False}
 
 
-#  Registrar persona
+# Registrar persona
 @app.post("/personas")
 def crear_persona(persona: Persona):
 
@@ -58,36 +56,65 @@ def crear_persona(persona: Persona):
     }
 
 
-#  VALIDACIÓN DE ACCESO (ESTE ERA EL CLAVE)
+#  VALIDAR ACCESO (ENTRADA)
 @app.post("/acceso")
 def validar_acceso(data: dict):
 
     qr_data = data.get("qr_id")
 
     if not qr_data:
-        return {
-            "permitido": False,
-            "mensaje": "QR vacío"
-        }
+        return {"permitido": False, "mensaje": "QR vacío"}
 
-    # Extraer el código (por si viene con |timestamp)
+    #  EXTRAER ID BASE (QR dinámico)
     qr_id = qr_data[:11]
-    if not qr_id.startswith("QR-"):
-        return {"permitido":False, "mensaje": "QR inválido"}
 
-    # Buscar en Firebase
+    if not qr_id.startswith("QR-"):
+        return {"permitido": False, "mensaje": "QR inválido"}
+
     personas = db.collection("personas").where("qr_id", "==", qr_id).stream()
 
     for persona in personas:
         datos = persona.to_dict()
+
+        # SI YA ESTÁ DENTRO → BLOQUEAR
+        if datos.get("dentro") == True:
+            return {
+                "permitido": False,
+                "mensaje": f"{datos.get('nombres')} ya está dentro"
+            }
+
+        #  PERMITIR ENTRADA
+        persona.reference.update({"dentro": True})
 
         return {
             "permitido": True,
             "mensaje": f"Acceso permitido: {datos.get('nombres')}"
         }
 
-    return {
-        "permitido": False,
-        "mensaje": "QR no registrado"
-    }
+    return {"permitido": False, "mensaje": "QR no registrado"}
 
+
+#  REGISTRAR SALIDA
+@app.post("/salida")
+def registrar_salida(data: dict):
+
+    qr_data = data.get("qr_id")
+
+    if not qr_data:
+        return {"mensaje": "QR vacío"}
+
+    qr_id = qr_data[:11]
+
+    personas = db.collection("personas").where("qr_id", "==", qr_id).stream()
+
+    for persona in personas:
+        datos = persona.to_dict()
+
+        #  MARCAR COMO FUERA
+        persona.reference.update({"dentro": False})
+
+        return {
+            "mensaje": f"Salida registrada: {datos.get('nombres')}"
+        }
+
+    return {"mensaje": "QR no registrado"}
