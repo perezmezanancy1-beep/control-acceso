@@ -13,6 +13,6 @@ if not firebase_admin._apps:
     else:
         # Local
 cred = credentials.Certificate("backend/serviceAccountKey.json")
-    firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred)
 
 db = firestore.client()
