@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "../frontend")), name="static")
 
 
-# Página principal
+#  Página principal
 @app.get("/")
 def index():
     return FileResponse(str(BASE_DIR / "../frontend/acceso.html"))
@@ -24,6 +24,7 @@ def index():
 #  Buscar usuario
 @app.get("/buscar_usuario")
 def buscar_usuario(nombre: str):
+
     doc = db.collection("personas").document(nombre).get()
 
     if doc.exists:
@@ -37,11 +38,11 @@ def buscar_usuario(nombre: str):
     return {"encontrado": False}
 
 
-# Registrar persona
+#  Registrar persona
 @app.post("/personas")
 def crear_persona(persona: Persona):
 
-    qr_id = f"QR-{uuid.uuid4().hex[:8].upper()}"
+    qr_id = f"QR-{uuid.uuid4().hex[:6].upper()}"
 
     data = persona.dict()
     data["qr_id"] = qr_id
@@ -65,25 +66,36 @@ def validar_acceso(data: dict):
     if not qr_data:
         return {"permitido": False, "mensaje": "QR vacío"}
 
-    #  EXTRAER ID BASE (QR dinámico)
-    qr_id = qr_data[:11]
+    #  SOPORTE PARA QR DINÁMICO
+    try:
+        qr_id = qr_data.split("|")[0].strip().upper()
+    except:
+        return {"permitido": False, "mensaje": "QR inválido"}
 
     if not qr_id.startswith("QR-"):
         return {"permitido": False, "mensaje": "QR inválido"}
 
+    #  Buscar en Firebase
     personas = db.collection("personas").where("qr_id", "==", qr_id).stream()
 
     for persona in personas:
         datos = persona.to_dict()
 
-        # SI YA ESTÁ DENTRO → BLOQUEAR
+        #  si no está activo
+        if not datos.get("activo", True):
+            return {
+                "permitido": False,
+                "mensaje": "Usuario inactivo"
+            }
+
+        # si ya está dentro
         if datos.get("dentro") == True:
             return {
                 "permitido": False,
                 "mensaje": f"{datos.get('nombres')} ya está dentro"
             }
 
-        #  PERMITIR ENTRADA
+        #  permitir entrada
         persona.reference.update({"dentro": True})
 
         return {
@@ -103,14 +115,17 @@ def registrar_salida(data: dict):
     if not qr_data:
         return {"mensaje": "QR vacío"}
 
-    qr_id = qr_data[:11]
+    try:
+        qr_id = qr_data.split("|")[0].strip().upper()
+    except:
+        return {"mensaje": "QR inválido"}
 
     personas = db.collection("personas").where("qr_id", "==", qr_id).stream()
 
     for persona in personas:
         datos = persona.to_dict()
 
-        #  MARCAR COMO FUERA
+        # marcar salida
         persona.reference.update({"dentro": False})
 
         return {
