@@ -27,7 +27,6 @@
       gap:10px;
     }
 
-    /* Logo */
     .logo{
       width:56px;
       height:56px;
@@ -45,14 +44,12 @@
       letter-spacing:.5px;
     }
 
-    /* ID */
     #usuario{
       font-weight:800;
       letter-spacing:.3px;
       color:#ffffff;
     }
 
-    /* Contenedor QR centrado */
     .qr-wrap{
       width: 260px;
       height: 260px;
@@ -66,7 +63,6 @@
       overflow:hidden;
     }
 
-    /* Animación “latido” */
     .pulse::after{
       content:"";
       position:absolute;
@@ -75,20 +71,19 @@
       box-shadow: 0 0 0 0 rgba(56,189,248,.5);
       animation:pulse 2s infinite;
     }
+
     @keyframes pulse{
       0%{ box-shadow:0 0 0 0 rgba(56,189,248,.5); }
       70%{ box-shadow:0 0 0 18px rgba(56,189,248,0); }
       100%{ box-shadow:0 0 0 0 rgba(56,189,248,0); }
     }
 
-    /* Imagen QR */
     #qrImage{
       width:220px;
       height:220px;
       image-rendering:pixelated;
     }
 
-    /* Contador */
     .timer{
       display:flex;
       align-items:center;
@@ -96,20 +91,18 @@
       margin-top:4px;
       font-weight:700;
     }
+
     .timer span{
       color:#38bdf8;
     }
 
-    /* Toggle sonido */
     .sound{
       margin-top:6px;
       font-size:12px;
       color:#94a3b8;
       cursor:pointer;
-      user-select:none;
     }
 
-    /* Overlay éxito */
     .overlay{
       position:fixed;
       inset:0;
@@ -119,115 +112,104 @@
       justify-content:center;
       z-index:999;
     }
-    .overlay .box{
+
+    .box{
       background:#16a34a;
       color:white;
       padding:28px 30px;
       border-radius:18px;
       font-size:22px;
       font-weight:900;
-      box-shadow:0 20px 50px rgba(0,0,0,.4);
-      animation:pop .35s ease-out;
-    }
-    @keyframes pop{
-      from{ transform:scale(.8); opacity:0; }
-      to{ transform:scale(1); opacity:1; }
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container min-vh-100 d-flex justify-content-center align-items-center">
-    <div class="card">
-      <!-- Logo -->
-      <div class="logo"><span>UAC</span></div>
+<div class="container min-vh-100 d-flex justify-content-center align-items-center">
+  <div class="card">
 
-      <!-- ID -->
-      <div id="usuario">ID:</div>
+    <div class="logo"><span>UAC</span></div>
 
-      <!-- QR centrado -->
-      <div class="qr-wrap pulse">
-        <img id="qrImage" alt="QR dinámico"/>
-      </div>
+    <div id="usuario">ID:</div>
 
-      <!-- Contador -->
-      <div class="timer">
-        ⏱️ <span id="time">30</span> s
-      </div>
-
-      <!-- Sonido -->
-      <div class="sound" id="soundToggle">🔊 Sonido activado</div>
+    <div class="qr-wrap pulse">
+      <img id="qrImage"/>
     </div>
+
+    <div class="timer">
+      ⏱️ <span id="time">30</span> s
+    </div>
+
+    <div class="sound" id="soundToggle">🔊 Sonido activado</div>
+
   </div>
+</div>
 
-  <!-- Overlay de éxito -->
-  <div class="overlay" id="okOverlay">
-    <div class="box">✅ ACCESO PERMITIDO</div>
-  </div>
+<div class="overlay" id="okOverlay">
+  <div class="box">✅ ACCESO PERMITIDO</div>
+</div>
 
-  <!-- Sonido -->
-  <audio id="beep">
-    <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
-  </audio>
+<audio id="beep">
+  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
+</audio>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const qrBase = params.get("qr");
-    const nombre = params.get("nombre");
+<script>
 
-    document.getElementById("usuario").innerText = "ID: " + nombre;
+const params = new URLSearchParams(window.location.search);
+const qrBase = params.get("qr");
+const nombre = params.get("nombre");
 
-    const qrImg = document.getElementById("qrImage");
-    const timeEl = document.getElementById("time");
-    const beep = document.getElementById("beep");
-    const soundToggle = document.getElementById("soundToggle");
-    const overlay = document.getElementById("okOverlay");
+document.getElementById("usuario").innerText = "ID: " + nombre;
 
-    let sonido = true;
-    let t = 30;
+const qrImg = document.getElementById("qrImage");
+const timeEl = document.getElementById("time");
+const beep = document.getElementById("beep");
 
-    soundToggle.onclick = () => {
-      sonido = !sonido;
-      soundToggle.innerText = sonido ? "🔊 Sonido activado" : "🔇 Sonido desactivado";
-    };
+let sonido = true;
+let t = 30;
 
-    function generarQR(){
-      const ts = Math.floor(Date.now()/1000);
-      const data = `${qrBase}|${ts}|TEST`;
+document.getElementById("soundToggle").onclick = () => {
+  sonido = !sonido;
+};
 
-      // QR como imagen (robusto)
-      qrImg.src =
-        `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(data)}`;
+function generarQR(){
 
-      t = 30;
-      timeEl.innerText = t;
+  const ts = Math.floor(Date.now() / 1000);
 
-      if(sonido){
-        beep.currentTime = 0;
-        beep.play().catch(()=>{});
-      }
-    }
+  // ✅ FORMATO CORRECTO PARA RASPBERRY
+  const data = JSON.stringify({
+    token: qrBase,
+    time: ts
+  });
 
-    // Contador
-    setInterval(()=>{
-      t--;
-      if(t <= 0){
-        generarQR();
-      }else{
-        timeEl.innerText = t;
-      }
-    },1000);
+  qrImg.src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(data)}`;
 
-    // Primer QR
+  t = 30;
+  timeEl.innerText = t;
+
+  if (sonido){
+    beep.currentTime = 0;
+    beep.play().catch(() => {});
+  }
+}
+
+// contador
+setInterval(()=>{
+  t--;
+
+  if (t <= 0){
     generarQR();
+  } else {
+    timeEl.innerText = t;
+  }
+},1000);
 
-    // Simulación de “éxito” (puedes activarlo desde la Raspberry con un parámetro)
-    if(params.get("ok") === "1"){
-      overlay.style.display = "flex";
-      setTimeout(()=> overlay.style.display="none", 1800);
-    }
-  </script>
+// primer QR
+generarQR();
+
+</script>
 
 </body>
 </html>
